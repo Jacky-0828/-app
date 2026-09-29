@@ -1,554 +1,1114 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>群莘戰隊 App</title>
 
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
+
+  <title>群莘戰隊</title>
+
+  <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     * {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
       margin: 0;
+      min-height: 100vh;
       font-family:
         -apple-system,
         BlinkMacSystemFont,
         "Noto Sans TC",
+        "PingFang TC",
+        "Microsoft JhengHei",
         sans-serif;
+
       background: #f5f7fb;
-      color: #222;
+      color: #111827;
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 70px 20px 50px;
+      display: flex;
+      justify-content: center;
     }
 
     .container {
-      max-width: 500px;
-      margin: auto;
-      padding: 24px 18px 40px;
+      width: 100%;
+      max-width: 520px;
     }
 
-    .logo {
+    .header {
       text-align: center;
-      font-size: 30px;
+      margin-bottom: 42px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 42px;
       font-weight: 800;
-      margin: 20px 0 8px;
+      letter-spacing: 2px;
     }
 
-    .subtitle {
-      text-align: center;
+    .header p {
+      margin: 16px 0 0;
+      font-size: 23px;
       color: #777;
-      margin-bottom: 30px;
     }
 
     .card {
       background: white;
-      border-radius: 18px;
-      padding: 20px;
+      border-radius: 30px;
+      padding: 34px 28px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+    }
+
+    .field {
       margin-bottom: 18px;
-      box-shadow: 0 4px 15px rgba(0,0,0,.06);
     }
 
     input {
       width: 100%;
-      padding: 15px;
-      margin-bottom: 12px;
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      font-size: 16px;
+      height: 74px;
+      border: 2px solid #dedede;
+      border-radius: 22px;
+      padding: 0 25px;
+      font-size: 23px;
       outline: none;
+      background: white;
+      color: #111;
     }
 
     input:focus {
-      border-color: #111827;
+      border-color: #172033;
+    }
+
+    input::placeholder {
+      color: #aaa;
     }
 
     button {
       width: 100%;
-      border: 0;
-      border-radius: 12px;
-      padding: 15px;
-      font-size: 16px;
+      height: 74px;
+      border: none;
+      border-radius: 22px;
+      font-size: 24px;
       font-weight: 700;
       cursor: pointer;
-      margin-bottom: 10px;
     }
 
     .primary {
       background: #111827;
       color: white;
+      margin-top: 6px;
+    }
+
+    .primary:active {
+      transform: scale(0.99);
     }
 
     .secondary {
-      background: #e8edf7;
-      color: #172554;
+      background: #e9eef8;
+      color: #172957;
+      margin-top: 20px;
     }
 
-    .activity {
-      background: #f0f4ff;
-      color: #172554;
+    .back-btn {
+      background: transparent;
+      color: #777;
+      margin-top: 12px;
     }
 
-    .logout {
-      background: #eee;
-      color: #333;
+    .message {
+      margin-top: 28px;
+      padding: 0 10px;
+      text-align: center;
+      font-size: 20px;
+      line-height: 1.6;
+      display: none;
+    }
+
+    .message.error {
+      display: block;
+      color: #d84035;
+    }
+
+    .message.success {
+      display: block;
+      color: #159447;
+    }
+
+    .message.info {
+      display: block;
+      color: #555;
+    }
+
+    .setup-title {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 20px;
+    }
+
+    .setup-description {
+      font-size: 22px;
+      line-height: 1.55;
+      color: #777;
+      margin-bottom: 30px;
+    }
+
+    .home {
+      text-align: center;
+    }
+
+    .home-title {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .member-name {
+      font-size: 28px;
+      color: #172957;
+      font-weight: 700;
+      margin: 20px 0;
+    }
+
+    .member-info {
+      background: #f5f7fb;
+      border-radius: 22px;
+      padding: 20px;
+      text-align: left;
+      font-size: 19px;
+      line-height: 1.8;
+      margin-bottom: 25px;
     }
 
     .hidden {
       display: none !important;
     }
 
-    .welcome {
-      font-size: 24px;
-      font-weight: 800;
-      margin-bottom: 5px;
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
     }
 
-    .level {
-      color: #666;
-      margin-bottom: 20px;
-    }
+    @media (max-width: 480px) {
+      .page {
+        padding: 60px 18px 40px;
+      }
 
-    .activity-grid {
-      display: grid;
-      gap: 10px;
-    }
+      .header h1 {
+        font-size: 36px;
+      }
 
-    .points {
-      float: right;
-      font-weight: 800;
-    }
+      .header p {
+        font-size: 20px;
+      }
 
-    #message,
-    #registerMessage {
-      text-align: center;
-      margin: 15px 0;
-      color: #d33;
-      min-height: 24px;
-      line-height: 1.6;
-    }
+      .card {
+        padding: 28px 22px;
+        border-radius: 28px;
+      }
 
-    .info {
-      color: #777 !important;
-      font-size: 14px;
-    }
+      input {
+        height: 68px;
+        font-size: 21px;
+      }
 
-    .success {
-      color: #16803c !important;
-    }
+      button {
+        height: 68px;
+        font-size: 22px;
+      }
 
-    .register-title {
-      font-size: 24px;
-      font-weight: 800;
-      margin-bottom: 8px;
-    }
-
-    .register-subtitle {
-      color: #777;
-      line-height: 1.6;
-      margin-bottom: 20px;
-    }
-
-    .back-button {
-      background: transparent;
-      color: #666;
-      padding: 8px;
+      .setup-title {
+        font-size: 32px;
+      }
     }
   </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="page">
+  <div class="container">
 
-  <!-- ================================= -->
-  <!-- 登入畫面 -->
-  <!-- ================================= -->
+    <!-- ========================= -->
+    <!-- 登入頁 -->
+    <!-- ========================= -->
 
-  <div id="loginPage">
+    <div id="loginPage">
 
-    <div class="logo">
-      群莘戰隊
+      <div class="header">
+        <h1>群莘戰隊</h1>
+        <p>南山人壽・業務活動管理</p>
+      </div>
+
+      <div class="card">
+
+        <div class="field">
+          <input
+            id="loginAgcode"
+            type="text"
+            inputmode="numeric"
+            placeholder="請輸入 AG Code"
+            autocomplete="username"
+          >
+        </div>
+
+        <div class="field">
+          <input
+            id="loginPassword"
+            type="password"
+            placeholder="請輸入密碼"
+            autocomplete="current-password"
+          >
+        </div>
+
+        <button
+          id="loginButton"
+          class="primary"
+          onclick="login()"
+        >
+          登入
+        </button>
+
+        <button
+          class="secondary"
+          onclick="showSetupPage()"
+        >
+          第一次使用 / 設定密碼
+        </button>
+
+        <div id="loginMessage" class="message"></div>
+
+      </div>
     </div>
 
-    <div class="subtitle">
-      南山人壽・業務活動管理
+
+    <!-- ========================= -->
+    <!-- 第一次使用 -->
+    <!-- ========================= -->
+
+    <div id="setupPage" class="hidden">
+
+      <div class="header">
+        <h1>群莘戰隊</h1>
+        <p>第一次使用</p>
+      </div>
+
+      <div class="card">
+
+        <div class="setup-title">
+          設定您的登入密碼
+        </div>
+
+        <div class="setup-description">
+          請輸入您的 AG Code 與 Email。<br>
+          系統會自動確認您的辦公室資料。
+        </div>
+
+        <div class="field">
+          <input
+            id="setupAgcode"
+            type="text"
+            inputmode="numeric"
+            placeholder="請輸入 AG Code"
+            autocomplete="username"
+          >
+        </div>
+
+        <div class="field">
+          <input
+            id="setupEmail"
+            type="email"
+            placeholder="請輸入 Email"
+            autocomplete="email"
+          >
+        </div>
+
+        <div class="field">
+          <input
+            id="setupPassword"
+            type="password"
+            placeholder="請設定密碼"
+            autocomplete="new-password"
+          >
+        </div>
+
+        <div class="field">
+          <input
+            id="setupPassword2"
+            type="password"
+            placeholder="請再次輸入密碼"
+            autocomplete="new-password"
+          >
+        </div>
+
+        <button
+          id="setupButton"
+          class="primary"
+          onclick="setupAccount()"
+        >
+          完成設定
+        </button>
+
+        <button
+          class="back-btn"
+          onclick="showLoginPage()"
+        >
+          ← 返回登入
+        </button>
+
+        <div id="setupMessage" class="message"></div>
+
+      </div>
     </div>
 
-    <div class="card">
 
-      <input
-        id="agCode"
-        type="text"
-        inputmode="numeric"
-        placeholder="請輸入 AG Code"
-      >
+    <!-- ========================= -->
+    <!-- 登入後首頁 -->
+    <!-- ========================= -->
 
-      <input
-        id="password"
-        type="password"
-        placeholder="請輸入密碼"
-      >
+    <div id="homePage" class="hidden">
 
-      <button
-        class="primary"
-        onclick="login()">
-        登入
-      </button>
+      <div class="header">
+        <h1>群莘戰隊</h1>
+        <p>南山人壽・業務活動管理</p>
+      </div>
 
-      <button
-        class="secondary"
-        onclick="showRegisterPage()">
-        第一次使用／設定密碼
-      </button>
+      <div class="card home">
 
-      <div id="message"></div>
+        <div class="home-title">
+          歡迎回來
+        </div>
+
+        <div
+          id="memberName"
+          class="member-name"
+        >
+          載入中...
+        </div>
+
+        <div
+          id="memberInfo"
+          class="member-info"
+        >
+        </div>
+
+        <button
+          class="primary"
+          onclick="logout()"
+        >
+          登出
+        </button>
+
+      </div>
 
     </div>
 
   </div>
-
-
-  <!-- ================================= -->
-  <!-- 第一次使用／註冊 -->
-  <!-- ================================= -->
-
-  <div id="registerPage" class="hidden">
-
-    <div class="logo">
-      群莘戰隊
-    </div>
-
-    <div class="subtitle">
-      第一次使用
-    </div>
-
-    <div class="card">
-
-      <div class="register-title">
-        設定您的登入密碼
-      </div>
-
-      <div class="register-subtitle">
-        請輸入您的 AG Code 與 Email。
-        <br>
-        系統會自動確認您的辦公室資料。
-      </div>
-
-      <input
-        id="registerAgCode"
-        type="text"
-        inputmode="numeric"
-        placeholder="請輸入 AG Code"
-      >
-
-      <input
-        id="registerEmail"
-        type="email"
-        placeholder="請輸入 Email"
-      >
-
-      <input
-        id="registerPassword"
-        type="password"
-        placeholder="請設定密碼"
-      >
-
-      <input
-        id="registerPassword2"
-        type="password"
-        placeholder="請再次輸入密碼"
-      >
-
-      <button
-        class="primary"
-        onclick="registerUser()">
-        完成設定
-      </button>
-
-      <button
-        class="back-button"
-        onclick="showLoginPage()">
-        ← 返回登入
-      </button>
-
-      <div id="registerMessage"></div>
-
-    </div>
-
-  </div>
-
-
-  <!-- ================================= -->
-  <!-- 首頁 -->
-  <!-- ================================= -->
-
-  <div id="homePage" class="hidden">
-
-    <div class="card">
-
-      <div class="welcome">
-        歡迎回來，
-        <span id="userName"></span>
-      </div>
-
-      <div class="level">
-        Lv.<span id="userLevel">1</span>
-        ・ XP <span id="userXP">0</span>
-      </div>
-
-    </div>
-
-
-    <!-- 今日活動 -->
-
-    <div class="card">
-
-      <h2>⚡ 快速活動</h2>
-
-      <div class="activity-grid">
-
-        <button
-          class="activity"
-          onclick="addActivity('約訪', 1)">
-          約訪
-          <span class="points">+1</span>
-        </button>
-
-        <button
-          class="activity"
-          onclick="addActivity('面談', 2)">
-          面談
-          <span class="points">+2</span>
-        </button>
-
-        <button
-          class="activity"
-          onclick="addActivity('遞送建議書', 3)">
-          遞送建議書
-          <span class="points">+3</span>
-        </button>
-
-        <button
-          class="activity"
-          onclick="addActivity('繳費', 4)">
-          繳費
-          <span class="points">+4</span>
-        </button>
-
-        <button
-          class="activity"
-          onclick="addActivity('簽收要保書', 5)">
-          簽收要保書
-          <span class="points">+5</span>
-        </button>
-
-      </div>
-
-    </div>
-
-
-    <!-- 戰隊功能 -->
-
-    <div class="card">
-
-      <h2>🏆 戰隊功能</h2>
-
-      <button class="activity">
-        🏆 排行榜
-      </button>
-
-      <button class="activity">
-        🎯 任務
-      </button>
-
-      <button class="activity">
-        🏅 徽章
-      </button>
-
-      <button class="activity">
-        💬 研討
-      </button>
-
-      <button class="activity">
-        👥 客戶
-      </button>
-
-    </div>
-
-
-    <button
-      class="logout"
-      onclick="logout()">
-      登出
-    </button>
-
-  </div>
-
 </div>
 
 
 <script>
 
-/* =====================================================
-   Supabase 設定
-===================================================== */
+  /* =====================================================
+     Supabase 設定
+     ===================================================== */
 
-const SUPABASE_URL =
-  "https://frtrmqakzsawbzrtkdgp.supabase.co";
+  const SUPABASE_URL =
+    "https://frtrmqakzsawbzrtkdgp.supabase.co";
 
-const SUPABASE_KEY =
-  "sb_publishable_cBszHnxSkX5vGKnOZ9H1Kg_fmCMND0q";
+  const SUPABASE_KEY =
+    "sb_publishable_cBszHnxSkX5vGKnOZ9H1Kg_fmCMND0q";
 
-const supabaseClient =
-  supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
-
-
-/* =====================================================
-   頁面切換
-===================================================== */
-
-function showLoginPage() {
-
-  document
-    .getElementById("registerPage")
-    .classList.add("hidden");
-
-  document
-    .getElementById("homePage")
-    .classList.add("hidden");
-
-  document
-    .getElementById("loginPage")
-    .classList.remove("hidden");
-
-}
+  const supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY,
+      {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true
+        }
+      }
+    );
 
 
-function showRegisterPage() {
+  /* =====================================================
+     頁面切換
+     ===================================================== */
 
-  document
-    .getElementById("loginPage")
-    .classList.add("hidden");
+  function showLoginPage() {
 
-  document
-    .getElementById("homePage")
-    .classList.add("hidden");
-
-  document
-    .getElementById("registerPage")
-    .classList.remove("hidden");
-
-  document
-    .getElementById("registerMessage")
-    .textContent = "";
-
-}
-
-
-/* =====================================================
-   登入
-===================================================== */
-
-async function login() {
-
-  const agCode =
     document
-      .getElementById("agCode")
-      .value
+      .getElementById("loginPage")
+      .classList.remove("hidden");
+
+    document
+      .getElementById("setupPage")
+      .classList.add("hidden");
+
+    document
+      .getElementById("homePage")
+      .classList.add("hidden");
+
+    clearMessages();
+  }
+
+
+  function showSetupPage() {
+
+    document
+      .getElementById("loginPage")
+      .classList.add("hidden");
+
+    document
+      .getElementById("setupPage")
+      .classList.remove("hidden");
+
+    document
+      .getElementById("homePage")
+      .classList.add("hidden");
+
+    clearMessages();
+  }
+
+
+  function showHomePage() {
+
+    document
+      .getElementById("loginPage")
+      .classList.add("hidden");
+
+    document
+      .getElementById("setupPage")
+      .classList.add("hidden");
+
+    document
+      .getElementById("homePage")
+      .classList.remove("hidden");
+
+    clearMessages();
+  }
+
+
+  function clearMessages() {
+
+    const messages = [
+      "loginMessage",
+      "setupMessage"
+    ];
+
+    messages.forEach(id => {
+
+      const element =
+        document.getElementById(id);
+
+      element.textContent = "";
+      element.className = "message";
+
+    });
+  }
+
+
+  /* =====================================================
+     顯示訊息
+     ===================================================== */
+
+  function showMessage(
+    elementId,
+    message,
+    type = "error"
+  ) {
+
+    const element =
+      document.getElementById(elementId);
+
+    element.textContent = message;
+
+    element.className =
+      "message " + type;
+
+  }
+
+
+  /* =====================================================
+     清理 AG Code
+     ===================================================== */
+
+  function cleanAgcode(value) {
+
+    return String(value || "")
       .trim();
 
-  const password =
-    document
-      .getElementById("password")
-      .value;
-
-  const message =
-    document
-      .getElementById("message");
-
-  message.textContent = "";
-
-  if (!agCode || !password) {
-
-    message.textContent =
-      "請輸入 AG Code 與密碼";
-
-    return;
   }
 
 
-  /* -------------------------------------
-     先找 AG Code
-  ------------------------------------- */
+  /* =====================================================
+     清理 Email
+     ===================================================== */
 
-  const {
-    data: allowedUser,
-    error: allowedError
-  } =
-    await supabaseClient
-      .from("allowed_ag_codes")
-      .select("*")
-      .eq("AGcode", agCode)
-      .maybeSingle();
+  function cleanEmail(value) {
 
+    return String(value || "")
+      .trim()
+      .toLowerCase();
 
-  if (allowedError) {
-
-    message.textContent =
-      "查詢 AG Code 失敗：" +
-      allowedError.message;
-
-    return;
   }
 
 
-  if (!allowedUser) {
+  /* =====================================================
+     第一次使用
+     
+     流程：
 
-    message.textContent =
-      "此 AG Code 尚未被允許使用";
+     1. AG Code
+     2. Email
+     3. 查 allowed_ag_codes
+     4. 確認 AG Code + Email
+     5. 建立 Supabase Auth 帳號
+     6. 建立 profiles
+     7. registered = true
+     ===================================================== */
 
-    return;
+  async function setupAccount() {
+
+    const button =
+      document.getElementById("setupButton");
+
+    const agcode =
+      cleanAgcode(
+        document.getElementById("setupAgcode").value
+      );
+
+    const email =
+      cleanEmail(
+        document.getElementById("setupEmail").value
+      );
+
+    const password =
+      document.getElementById("setupPassword").value;
+
+    const password2 =
+      document.getElementById("setupPassword2").value;
+
+
+    /* -------------------------
+       基本檢查
+       ------------------------- */
+
+    if (!agcode) {
+
+      showMessage(
+        "setupMessage",
+        "請輸入 AG Code"
+      );
+
+      return;
+    }
+
+
+    if (!email) {
+
+      showMessage(
+        "setupMessage",
+        "請輸入 Email"
+      );
+
+      return;
+    }
+
+
+    if (!password) {
+
+      showMessage(
+        "setupMessage",
+        "請設定密碼"
+      );
+
+      return;
+    }
+
+
+    if (password.length < 6) {
+
+      showMessage(
+        "setupMessage",
+        "密碼至少需要 6 碼"
+      );
+
+      return;
+    }
+
+
+    if (password !== password2) {
+
+      showMessage(
+        "setupMessage",
+        "兩次輸入的密碼不一致"
+      );
+
+      return;
+    }
+
+
+    button.classList.add("loading");
+    button.textContent = "確認資料中...";
+
+
+    try {
+
+      /* =================================================
+         ① 查詢 allowed_ag_codes
+
+         注意：
+         這裡使用 maybeSingle()
+         不使用 single()
+
+         避免沒有資料時出現：
+         Cannot coerce the result to a single JSON object
+         ================================================= */
+
+      const {
+        data: allowedUser,
+        error: allowedError
+      } = await supabaseClient
+        .from("allowed_ag_codes")
+        .select(
+          "AGcode,name,email,enable,registered"
+        )
+        .eq("AGcode", agcode)
+        .maybeSingle();
+
+
+      if (allowedError) {
+
+        console.error(
+          "allowed_ag_codes error:",
+          allowedError
+        );
+
+        throw new Error(
+          "讀取辦公室資料失敗：" +
+          allowedError.message
+        );
+
+      }
+
+
+      /* 找不到 AG Code */
+
+      if (!allowedUser) {
+
+        throw new Error(
+          "找不到此 AG Code，請確認輸入是否正確。"
+        );
+
+      }
+
+
+      /* AG 被停用 */
+
+      if (allowedUser.enable === false) {
+
+        throw new Error(
+          "此 AG Code 目前尚未啟用，請洽辦公室。"
+        );
+
+      }
+
+
+      /* =================================================
+         ② 比對 Email
+
+         Email 必須跟 allowed_ag_codes 裡的 Email 一樣
+         ================================================= */
+
+      const registeredEmail =
+        cleanEmail(allowedUser.email);
+
+
+      if (!registeredEmail) {
+
+        throw new Error(
+          "此 AG Code 尚未設定辦公室 Email。"
+        );
+
+      }
+
+
+      if (registeredEmail !== email) {
+
+        throw new Error(
+          "AG Code 與 Email 不符合，請確認資料是否正確。"
+        );
+
+      }
+
+
+      /* =================================================
+         ③ 如果已經 registered
+         不重新建立帳號
+         ================================================= */
+
+      if (allowedUser.registered === true) {
+
+        throw new Error(
+          "此 AG Code 已完成設定，請直接使用登入功能。"
+        );
+
+      }
+
+
+      button.textContent = "建立帳號...";
+
+
+      /* =================================================
+         ④ 建立 Supabase Auth 使用者
+
+         使用 Email + Password
+
+         AG Code 放到 metadata
+         ================================================= */
+
+      const {
+        data: signUpData,
+        error: signUpError
+      } = await supabaseClient.auth.signUp({
+
+        email: email,
+
+        password: password,
+
+        options: {
+
+          data: {
+
+            agcode: agcode,
+
+            name: allowedUser.name || ""
+
+          }
+
+        }
+
+      });
+
+
+      if (signUpError) {
+
+        console.error(
+          "signUp error:",
+          signUpError
+        );
+
+        throw new Error(
+          signUpError.message
+        );
+
+      }
+
+
+      const user =
+        signUpData.user;
+
+      const session =
+        signUpData.session;
+
+
+      if (!user) {
+
+        throw new Error(
+          "帳號建立失敗，沒有取得使用者資料。"
+        );
+
+      }
+
+
+      /* =================================================
+         ⑤ 如果 Supabase 要求 Email 驗證
+
+         signUp() 在 Email Confirm 開啟時
+         session 會是 null。
+
+         這種情況無法直接用前端建立 profiles
+         （因為 profiles 有 RLS）。
+
+         所以先提示使用者。
+         ================================================= */
+
+      if (!session) {
+
+        showMessage(
+          "setupMessage",
+          "帳號已建立！請先到 Email 收取驗證信並完成驗證，再重新登入。",
+          "success"
+        );
+
+        button.classList.remove("loading");
+        button.textContent = "完成設定";
+
+        return;
+
+      }
+
+
+      /* =================================================
+         ⑥ 建立 profiles
+
+         這時已經登入 Auth
+         auth.uid() = user.id
+
+         對應你的 profiles：
+
+         id
+         agcode
+         name
+         email
+         level
+         xp
+         created_at
+         ================================================= */
+
+      button.textContent = "建立會員資料...";
+
+
+      const {
+        error: profileError
+      } = await supabaseClient
+        .from("profiles")
+        .insert({
+
+          id: user.id,
+
+          agcode: agcode,
+
+          name: allowedUser.name,
+
+          email: email,
+
+          level: 1,
+
+          xp: 0
+
+        });
+
+
+      if (profileError) {
+
+        console.error(
+          "profiles insert error:",
+          profileError
+        );
+
+        throw new Error(
+          "帳號已建立，但會員資料建立失敗：" +
+          profileError.message
+        );
+
+      }
+
+
+      /* =================================================
+         ⑦ 將 allowed_ag_codes 設定為已註冊
+
+         這一步如果 RLS 不允許更新，
+         不會讓整個註冊流程失敗。
+
+         因為真正的登入依然可以透過 Auth 完成。
+         ================================================= */
+
+      const {
+        error: registeredError
+      } = await supabaseClient
+        .from("allowed_ag_codes")
+        .update({
+          registered: true
+        })
+        .eq("AGcode", agcode);
+
+
+      if (registeredError) {
+
+        console.warn(
+          "registered update failed:",
+          registeredError
+        );
+
+      }
+
+
+      /* =================================================
+         ⑧ 完成
+         ================================================= */
+
+      showMessage(
+        "setupMessage",
+        "設定完成！即將進入系統。",
+        "success"
+      );
+
+
+      setTimeout(() => {
+
+        loadMemberAndShowHome();
+
+      }, 800);
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      showMessage(
+        "setupMessage",
+        error.message ||
+        "設定失敗，請稍後再試。"
+      );
+
+    } finally {
+
+      button.classList.remove("loading");
+      button.textContent = "完成設定";
+
+    }
+
   }
 
 
-  if (allowedUser.enable === false) {
+  /* =====================================================
+     登入
 
-    message.textContent =
-      "此 AG Code 目前未開放使用";
+     AG Code + Password
 
-    return;
-  }
+     先用 AG Code 找 Email
+     再用 Email + Password 登入 Auth
+     ===================================================== */
 
+  async function login() {
 
-  if (!allowedUser.email) {
+    const button =
+      document.getElementById("loginButton");
 
-    message.textContent =
-      "此 AG Code 尚未設定 Email";
+    const agcode =
+      cleanAgcode(
+        document.getElementById("loginAgcode").value
+      );
 
-    return;
-  }
-
-
-  /* -------------------------------------
-     使用資料庫中的 Email 登入
-  ------------------------------------- */
-
-  const email =
-    allowedUser.email.trim().toLowerCase();
+    const password =
+      document.getElementById("loginPassword").value;
 
 
-  const {
-    data,
-    error
-  } =
-    await supabaseClient
-      .auth
-      .signInWithPassword({
+    if (!agcode) {
+
+      showMessage(
+        "loginMessage",
+        "請輸入 AG Code"
+      );
+
+      return;
+
+    }
+
+
+    if (!password) {
+
+      showMessage(
+        "loginMessage",
+        "請輸入密碼"
+      );
+
+      return;
+
+    }
+
+
+    button.classList.add("loading");
+    button.textContent = "登入中...";
+
+
+    try {
+
+      /* =================================================
+         ① 用 AG Code 找 Email
+         ================================================= */
+
+      const {
+        data: allowedUser,
+        error: allowedError
+      } = await supabaseClient
+        .from("allowed_ag_codes")
+        .select(
+          "AGcode,name,email,enable"
+        )
+        .eq("AGcode", agcode)
+        .maybeSingle();
+
+
+      if (allowedError) {
+
+        console.error(
+          "allowed_ag_codes error:",
+          allowedError
+        );
+
+        throw new Error(
+          "讀取 AG Code 資料失敗：" +
+          allowedError.message
+        );
+
+      }
+
+
+      if (!allowedUser) {
+
+        throw new Error(
+          "找不到此 AG Code。"
+        );
+
+      }
+
+
+      if (allowedUser.enable === false) {
+
+        throw new Error(
+          "此 AG Code 目前尚未啟用。"
+        );
+
+      }
+
+
+      const email =
+        cleanEmail(allowedUser.email);
+
+
+      if (!email) {
+
+        throw new Error(
+          "此 AG Code 沒有設定 Email，無法登入。"
+        );
+
+      }
+
+
+      /* =================================================
+         ② Email + Password 登入
+         ================================================= */
+
+      const {
+        data: loginData,
+        error: loginError
+      } = await supabaseClient.auth.signInWithPassword({
 
         email: email,
 
@@ -557,527 +1117,291 @@ async function login() {
       });
 
 
-  if (error) {
+      if (loginError) {
 
-    message.textContent =
-      "登入失敗：" +
-      "AG Code 或密碼錯誤";
+        console.error(
+          "login error:",
+          loginError
+        );
 
-    return;
-  }
+        throw new Error(
+          "登入失敗，請確認 AG Code 或密碼是否正確。"
+        );
 
+      }
 
-  await loadProfile(data.user.id);
 
-}
+      if (!loginData.user) {
 
+        throw new Error(
+          "登入失敗，沒有取得使用者資料。"
+        );
 
-/* =====================================================
-   第一次使用／設定密碼
-===================================================== */
+      }
 
-async function registerUser() {
 
-  const agCode =
-    document
-      .getElementById("registerAgCode")
-      .value
-      .trim();
+      /* =================================================
+         ③ 登入成功
+         ================================================= */
 
-  const emailInput =
-    document
-      .getElementById("registerEmail")
-      .value
-      .trim()
-      .toLowerCase();
+      await loadMemberAndShowHome();
 
-  const password =
-    document
-      .getElementById("registerPassword")
-      .value;
 
-  const password2 =
-    document
-      .getElementById("registerPassword2")
-      .value;
+    } catch (error) {
 
-  const message =
-    document
-      .getElementById("registerMessage");
+      console.error(error);
 
-  message.textContent = "";
+      showMessage(
+        "loginMessage",
+        error.message ||
+        "登入失敗，請稍後再試。"
+      );
 
+    } finally {
 
-  /* -------------------------------------
-     基本檢查
-  ------------------------------------- */
+      button.classList.remove("loading");
+      button.textContent = "登入";
 
-  if (
-    !agCode ||
-    !emailInput ||
-    !password ||
-    !password2
-  ) {
-
-    message.textContent =
-      "請完整填寫所有資料";
-
-    return;
-  }
-
-
-  if (password.length < 6) {
-
-    message.textContent =
-      "密碼至少需要 6 個字元";
-
-    return;
-  }
-
-
-  if (password !== password2) {
-
-    message.textContent =
-      "兩次輸入的密碼不一致";
-
-    return;
-  }
-
-
-  /* -------------------------------------
-     查詢 AG Code
-  ------------------------------------- */
-
-  const {
-    data: allowedUser,
-    error: allowedError
-  } =
-    await supabaseClient
-      .from("allowed_ag_codes")
-      .select("*")
-      .eq("AGcode", agCode)
-      .maybeSingle();
-
-
-  if (allowedError) {
-
-    message.textContent =
-      "查詢 AG Code 失敗：" +
-      allowedError.message;
-
-    return;
-  }
-
-
-  if (!allowedUser) {
-
-    message.textContent =
-      "找不到此 AG Code，請確認輸入是否正確";
-
-    return;
-  }
-
-
-  /* -------------------------------------
-     是否啟用
-  ------------------------------------- */
-
-  if (allowedUser.enable === false) {
-
-    message.textContent =
-      "此 AG Code 目前未開放註冊";
-
-    return;
-  }
-
-
-  /* -------------------------------------
-     檢查 Email
-  ------------------------------------- */
-
-  if (!allowedUser.email) {
-
-    message.textContent =
-      "此 AG Code 尚未設定 Email，請聯絡管理員";
-
-    return;
-  }
-
-
-  const registeredEmail =
-    allowedUser.email
-      .trim()
-      .toLowerCase();
-
-
-  if (registeredEmail !== emailInput) {
-
-    message.textContent =
-      "AG Code 與 Email 不符，請確認資料";
-
-    return;
-  }
-
-
-  /* -------------------------------------
-     是否已註冊
-  ------------------------------------- */
-
-  if (allowedUser.registered === true) {
-
-    message.textContent =
-      "此 AG Code 已完成註冊，請直接使用 AG Code＋密碼登入";
-
-    return;
-  }
-
-
-  /* -------------------------------------
-     建立 Supabase Auth 帳號
-  ------------------------------------- */
-
-  message.textContent =
-    "正在建立帳號，請稍候...";
-
-
-  const {
-    data: signUpData,
-    error: signUpError
-  } =
-    await supabaseClient
-      .auth
-      .signUp({
-
-        email: registeredEmail,
-
-        password: password
-
-      });
-
-
-  if (signUpError) {
-
-    message.textContent =
-      "建立帳號失敗：" +
-      signUpError.message;
-
-    return;
-  }
-
-
-  if (!signUpData.user) {
-
-    message.textContent =
-      "建立帳號失敗，請稍後再試";
-
-    return;
-  }
-
-
-  const userId =
-    signUpData.user.id;
-
-
-  /* -------------------------------------
-     建立 profiles
-  ------------------------------------- */
-
-  const {
-    error: profileError
-  } =
-    await supabaseClient
-      .from("profiles")
-      .insert({
-
-        id: userId,
-
-        name: allowedUser.name,
-
-        level: 1,
-
-        xp: 0
-
-      });
-
-
-  if (profileError) {
-
-    message.textContent =
-      "帳號已建立，但會員資料建立失敗：" +
-      profileError.message;
-
-    return;
-  }
-
-
-  /* -------------------------------------
-     更新 registered
-  ------------------------------------- */
-
-  const {
-    error: updateError
-  } =
-    await supabaseClient
-      .from("allowed_ag_codes")
-      .update({
-
-        registered: true
-
-      })
-      .eq("AGcode", agCode);
-
-
-  if (updateError) {
-
-    message.textContent =
-      "帳號已建立，但註冊狀態更新失敗：" +
-      updateError.message;
-
-    return;
-  }
-
-
-  /* -------------------------------------
-     成功
-  ------------------------------------- */
-
-  if (signUpData.session) {
-
-    message.textContent =
-      "設定完成！正在進入群莘戰隊...";
-
-    message.classList.add("success");
-
-    await loadProfile(userId);
-
-  } else {
-
-    message.textContent =
-      "設定完成！請至 Email 完成驗證後再登入。";
-
-    message.classList.add("success");
-
-  }
-
-}
-
-
-/* =====================================================
-   讀取會員資料
-===================================================== */
-
-async function loadProfile(userId) {
-
-  const {
-    data,
-    error
-  } =
-    await supabaseClient
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-
-
-  if (error) {
-
-    document
-      .getElementById("message")
-      .textContent =
-      "找不到會員資料：" +
-      error.message;
-
-    return;
-  }
-
-
-  /* 隱藏登入／註冊 */
-
-  document
-    .getElementById("loginPage")
-    .classList.add("hidden");
-
-  document
-    .getElementById("registerPage")
-    .classList.add("hidden");
-
-
-  /* 顯示首頁 */
-
-  document
-    .getElementById("homePage")
-    .classList.remove("hidden");
-
-
-  /* 填入會員資料 */
-
-  document
-    .getElementById("userName")
-    .textContent =
-      data.name || "";
-
-
-  document
-    .getElementById("userLevel")
-    .textContent =
-      data.level ?? 1;
-
-
-  document
-    .getElementById("userXP")
-    .textContent =
-      data.xp ?? 0;
-
-}
-
-
-/* =====================================================
-   新增活動
-===================================================== */
-
-async function addActivity(type, points) {
-
-  const {
-    data: {
-      user
     }
-  } =
-    await supabaseClient
-      .auth
-      .getUser();
 
-
-  if (!user) {
-
-    alert("請先登入");
-
-    return;
   }
 
 
-  const {
-    error
-  } =
-    await supabaseClient
-      .from("activities")
-      .insert({
+  /* =====================================================
+     取得目前會員資料
+     ===================================================== */
 
-        user_id: user.id,
+  async function loadMemberAndShowHome() {
 
-        activity_type: type,
+    try {
 
-        points: points
-
-      });
-
-
-  if (error) {
-
-    alert(
-      "紀錄失敗：" +
-      error.message
-    );
-
-    return;
-  }
+      const {
+        data: {
+          user
+        },
+        error: userError
+      } = await supabaseClient.auth.getUser();
 
 
-  alert(
-    "完成「" +
-    type +
-    "」！\n獲得 +" +
-    points +
-    " XP"
-  );
+      if (userError || !user) {
+
+        throw new Error(
+          "找不到目前登入的帳號。"
+        );
+
+      }
 
 
-  await loadProfile(user.id);
+      /* =================================================
+         profiles 使用 auth.uid() 對應
 
-}
+         不用 AG Code 查。
 
+         因為你的 profiles.id
+         是 references auth.users(id)
+         ================================================= */
 
-/* =====================================================
-   登出
-===================================================== */
-
-async function logout() {
-
-  await supabaseClient
-    .auth
-    .signOut();
-
-
-  document
-    .getElementById("homePage")
-    .classList.add("hidden");
-
-
-  document
-    .getElementById("loginPage")
-    .classList.remove("hidden");
+      const {
+        data: profile,
+        error: profileError
+      } = await supabaseClient
+        .from("profiles")
+        .select(
+          "id,agcode,name,email,level,xp,created_at"
+        )
+        .eq("id", user.id)
+        .maybeSingle();
 
 
-  document
-    .getElementById("agCode")
-    .value = "";
+      if (profileError) {
+
+        console.error(
+          "profile error:",
+          profileError
+        );
+
+        throw new Error(
+          "讀取會員資料失敗：" +
+          profileError.message
+        );
+
+      }
 
 
-  document
-    .getElementById("password")
-    .value = "";
+      if (!profile) {
+
+        throw new Error(
+          "找不到會員資料，請重新完成第一次使用設定。"
+        );
+
+      }
 
 
-  document
-    .getElementById("message")
-    .textContent = "";
+      /* =================================================
+         顯示首頁
+         ================================================= */
 
-}
+      document
+        .getElementById("memberName")
+        .textContent =
+        profile.name || "會員";
 
 
-/* =====================================================
-   自動登入
-===================================================== */
+      document
+        .getElementById("memberInfo")
+        .innerHTML = `
 
-async function checkSession() {
+          <div>
+            <strong>AG Code：</strong>
+            ${escapeHtml(profile.agcode)}
+          </div>
 
-  const {
-    data: {
-      session
+          <div>
+            <strong>Email：</strong>
+            ${escapeHtml(profile.email)}
+          </div>
+
+          <div>
+            <strong>等級：</strong>
+            ${profile.level ?? 1}
+          </div>
+
+          <div>
+            <strong>XP：</strong>
+            ${profile.xp ?? 0}
+          </div>
+
+        `;
+
+
+      showHomePage();
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      await supabaseClient.auth.signOut();
+
+      showLoginPage();
+
+      showMessage(
+        "loginMessage",
+        error.message ||
+        "讀取會員資料失敗。"
+      );
+
     }
-  } =
-    await supabaseClient
-      .auth
-      .getSession();
-
-
-  if (session) {
-
-    await loadProfile(
-      session.user.id
-    );
 
   }
 
-}
+
+  /* =====================================================
+     登出
+     ===================================================== */
+
+  async function logout() {
+
+    await supabaseClient.auth.signOut();
+
+    document
+      .getElementById("loginAgcode")
+      .value = "";
+
+    document
+      .getElementById("loginPassword")
+      .value = "";
+
+    showLoginPage();
+
+  }
 
 
-/* =====================================================
-   監聽登入狀態
-===================================================== */
+  /* =====================================================
+     防止會員名稱等資料直接插入 HTML
+     ===================================================== */
 
-supabaseClient
-  .auth
-  .onAuthStateChange(
+  function escapeHtml(value) {
+
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+  }
+
+
+  /* =====================================================
+     頁面載入
+
+     如果瀏覽器已經有 Supabase Session
+     自動進入首頁
+     ===================================================== */
+
+  async function checkExistingSession() {
+
+    try {
+
+      const {
+        data: {
+          session
+        }
+      } = await supabaseClient.auth.getSession();
+
+
+      if (session) {
+
+        await loadMemberAndShowHome();
+
+      } else {
+
+        showLoginPage();
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        "session check error:",
+        error
+      );
+
+      showLoginPage();
+
+    }
+
+  }
+
+
+  /* =====================================================
+     Auth 狀態監聽
+     ===================================================== */
+
+  supabaseClient.auth.onAuthStateChange(
     async (event, session) => {
+
+      console.log(
+        "Auth event:",
+        event
+      );
 
       if (
         event === "SIGNED_IN" &&
         session
       ) {
 
-        await loadProfile(
-          session.user.id
-        );
+        /*
+         * 延遲一下避免 Auth 狀態更新時
+         * 同時觸發多次資料請求
+         */
+
+        setTimeout(() => {
+
+          loadMemberAndShowHome();
+
+        }, 100);
 
       }
 
@@ -1085,11 +1409,41 @@ supabaseClient
   );
 
 
-/* =====================================================
-   啟動
-===================================================== */
+  /* =====================================================
+     啟動
+     ===================================================== */
 
-checkSession();
+  checkExistingSession();
+
+
+  /* =====================================================
+     Enter 鍵操作
+     ===================================================== */
+
+  document
+    .getElementById("loginPassword")
+    .addEventListener("keydown", function(event) {
+
+      if (event.key === "Enter") {
+
+        login();
+
+      }
+
+    });
+
+
+  document
+    .getElementById("setupPassword2")
+    .addEventListener("keydown", function(event) {
+
+      if (event.key === "Enter") {
+
+        setupAccount();
+
+      }
+
+    });
 
 </script>
 
