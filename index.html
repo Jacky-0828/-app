@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>群莘戰隊 App</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif;
+      background: #f5f7fb;
+      color: #222;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      padding: 24px 18px 40px;
+    }
+
+    .logo {
+      text-align: center;
+      font-size: 30px;
+      font-weight: 800;
+      margin: 20px 0 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #777;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 15px rgba(0,0,0,.06);
+    }
+
+    input {
+      width: 100%;
+      padding: 15px;
+      margin-bottom: 12px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    .primary {
+      background: #111827;
+      color: white;
+    }
+
+    .activity {
+      background: #f0f4ff;
+      color: #172554;
+    }
+
+    .logout {
+      background: #eee;
+      color: #333;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .welcome {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+
+    .level {
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .activity-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .points {
+      float: right;
+      font-weight: 800;
+    }
+
+    #message {
+      text-align: center;
+      margin: 15px 0;
+      color: #d33;
+      min-height: 24px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- 登入畫面 -->
+  <div id="loginPage">
+
+    <div class="logo">群莘戰隊</div>
+    <div class="subtitle">南山人壽・業務活動管理</div>
+
+    <div class="card">
+
+      <input
+        id="agCode"
+        type="text"
+        placeholder="請輸入 AG Code"
+      >
+
+      <input
+        id="password"
+        type="password"
+        placeholder="請輸入密碼"
+      >
+
+      <button class="primary" onclick="login()">
+        登入
+      </button>
+
+      <div id="message"></div>
+
+    </div>
+
+  </div>
+
+
+  <!-- 首頁 -->
+  <div id="homePage" class="hidden">
+
+    <div class="card">
+
+      <div class="welcome">
+        歡迎回來，<span id="userName"></span>
+      </div>
+
+      <div class="level">
+        Lv.<span id="userLevel">1</span>
+        ・ XP <span id="userXP">0</span>
+      </div>
+
+    </div>
+
+
+    <!-- 今日活動 -->
+    <div class="card">
+
+      <h2>⚡ 快速活動</h2>
+
+      <div class="activity-grid">
+
+        <button class="activity"
+          onclick="addActivity('約訪', 1)">
+          約訪
+          <span class="points">+1</span>
+        </button>
+
+        <button class="activity"
+          onclick="addActivity('面談', 2)">
+          面談
+          <span class="points">+2</span>
+        </button>
+
+        <button class="activity"
+          onclick="addActivity('遞送建議書', 3)">
+          遞送建議書
+          <span class="points">+3</span>
+        </button>
+
+        <button class="activity"
+          onclick="addActivity('繳費', 4)">
+          繳費
+          <span class="points">+4</span>
+        </button>
+
+        <button class="activity"
+          onclick="addActivity('簽收要保書', 5)">
+          簽收要保書
+          <span class="points">+5</span>
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- 功能 -->
+    <div class="card">
+
+      <h2>🏆 戰隊功能</h2>
+
+      <button class="activity">
+        🏆 排行榜
+      </button>
+
+      <button class="activity">
+        🎯 任務
+      </button>
+
+      <button class="activity">
+        🏅 徽章
+      </button>
+
+      <button class="activity">
+        💬 研討
+      </button>
+
+      <button class="activity">
+        👥 客戶
+      </button>
+
+    </div>
+
+
+    <button class="logout" onclick="logout()">
+      登出
+    </button>
+
+  </div>
+
+</div>
+
+
+<script>
+
+  // =========================
+  // Supabase 設定
+  // =========================
+
+  const SUPABASE_URL =
+    "https://xlbssyorsrnmnanwpzlv.supabase.co";
+
+  const SUPABASE_KEY =
+    "sb_publishable_DTqWFUESvM_VPX2CU2UAuw_LkDOqLX_";
+
+  const supabaseClient =
+    supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+
+  // =========================
+  // 登入
+  // =========================
+
+  async function login() {
+
+    const agCode =
+      document.getElementById("agCode").value.trim();
+
+    const password =
+      document.getElementById("password").value;
+
+    const message =
+      document.getElementById("message");
+
+    message.textContent = "";
+
+    if (!agCode || !password) {
+      message.textContent = "請輸入 AG Code 與密碼";
+      return;
+    }
+
+    // 第一版先用 AG Code 組成登入 Email
+    const email = agCode + "@qunxin.app";
+
+    const { data, error } =
+      await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+    if (error) {
+      message.textContent =
+        "登入失敗：" + error.message;
+      return;
+    }
+
+    await loadProfile(data.user.id);
+
+  }
+
+
+  // =========================
+  // 讀取會員資料
+  // =========================
+
+  async function loadProfile(userId) {
+
+    const { data, error } =
+      await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+    if (error) {
+      document.getElementById("message").textContent =
+        "找不到會員資料：" + error.message;
+      return;
+    }
+
+    document.getElementById("loginPage")
+      .classList.add("hidden");
+
+    document.getElementById("homePage")
+      .classList.remove("hidden");
+
+    document.getElementById("userName")
+      .textContent = data.name;
+
+    document.getElementById("userLevel")
+      .textContent = data.level;
+
+    document.getElementById("userXP")
+      .textContent = data.xp;
+  }
+
+
+  // =========================
+  // 新增活動
+  // =========================
+
+  async function addActivity(type, points) {
+
+    const {
+      data: { user }
+    } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+      alert("請先登入");
+      return;
+    }
+
+    const { error } =
+      await supabaseClient
+        .from("activities")
+        .insert({
+          user_id: user.id,
+          activity_type: type,
+          points: points
+        });
+
+    if (error) {
+      alert("紀錄失敗：" + error.message);
+      return;
+    }
+
+    alert(
+      "完成「" + type + "」！\n獲得 +" + points + " XP"
+    );
+
+    await loadProfile(user.id);
+  }
+
+
+  // =========================
+  // 登出
+  // =========================
+
+  async function logout() {
+
+    await supabaseClient.auth.signOut();
+
+    document.getElementById("homePage")
+      .classList.add("hidden");
+
+    document.getElementById("loginPage")
+      .classList.remove("hidden");
+  }
+
+
+  // =========================
+  // 自動檢查登入狀態
+  // =========================
+
+  async function checkSession() {
+
+    const {
+      data: { session }
+    } = await supabaseClient.auth.getSession();
+
+    if (session) {
+      await loadProfile(session.user.id);
+    }
+  }
+
+  checkSession();
+
+</script>
+
+</body>
+</html>
